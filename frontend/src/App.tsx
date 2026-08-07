@@ -1,0 +1,42 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AppLayout } from "./components/AppLayout";
+import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
+import { Dashboard } from "./pages/Dashboard";
+import { WorkoutPlans } from "./pages/WorkoutPlans";
+import { WorkoutPlanDetail } from "./pages/WorkoutPlanDetail";
+import { PlanBuilder } from "./pages/PlanBuilder";
+import { AICoach } from "./pages/AICoach";
+import { GymLogPage } from "./pages/GymLogPage";
+import { CalorieTracker } from "./pages/CalorieTracker";
+import { Groups } from "./pages/Groups";
+import { Settings } from "./pages/Settings";
+import { NotFound } from "./pages/NotFound";
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/plans" element={<WorkoutPlans />} />
+          <Route path="/plans/new" element={<PlanBuilder />} />
+          <Route path="/plans/:id" element={<WorkoutPlanDetail />} />
+          <Route path="/plans/:id/edit" element={<PlanBuilder />} />
+          <Route path="/coach" element={<AICoach />} />
+          <Route path="/gym-log" element={<GymLogPage />} />
+          <Route path="/calories" element={<CalorieTracker />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+      </Route>
+
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
+    </Routes>
+  );
+}

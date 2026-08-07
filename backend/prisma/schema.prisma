@@ -1,0 +1,163 @@
+// Flex Track database schema
+// Default datasource is SQLite for zero-config local development.
+// Point DATABASE_URL at Postgres/MySQL in production - the schema is compatible.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String? // null when the account was created via Google/Apple only
+  name           String
+  provider       String   @default("local") // local | google | apple
+  providerId     String?
+  avatarUrl      String?
+
+  // Profile used by the AI coach / calorie targets
+  age            Int?
+  sex            String? // male, female, other
+  heightCm       Float?
+  weightKg       Float?
+  goal           String? // muscle_gain | fat_loss | maintenance | strength | endurance
+  activityLevel  String? // sedentary | light | moderate | active | very_active
+  experience     String? // beginner | intermediate | advanced
+  equipment      String? // full_gym | home_basic | bodyweight_only
+
+  // Personal key used to authenticate Apple Health webhook payloads
+  healthApiKey   String   @unique
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  memberships    GroupMember[]
+  createdPlans   WorkoutPlan[]      @relation("PlanCreator")
+  planShares     WorkoutPlanShare[]
+  gymLogs        GymLog[]
+  calorieEntries CalorieEntry[]
+  healthSyncs    HealthSync[]
+}
+
+model Group {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+
+  members GroupMember[]
+  plans   WorkoutPlan[]
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  userId   String
+  role     String   @default("member") // owner | member
+  joinedAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model WorkoutPlan {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  goal          String?
+  daysPerWeek   Int?
+  createdById   String
+  groupId       String?
+  isAiGenerated Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy User               @relation("PlanCreator", fields: [createdById], references: [id])
+  group     Group?             @relation(fields: [groupId], references: [id])
+  days      WorkoutDay[]
+  shares    WorkoutPlanShare[]
+}
+
+model WorkoutDay {
+  id        String @id @default(cuid())
+  planId    String
+  dayNumber Int
+  title     String
+
+  plan      WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id          String  @id @default(cuid())
+  dayId       String
+  name        String
+  sets        Int
+  reps        String
+  restSeconds Int?
+  notes       String?
+  order       Int     @default(0)
+
+  day WorkoutDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutPlanShare {
+  id       String   @id @default(cuid())
+  planId   String
+  userId   String
+  sharedAt DateTime @default(now())
+
+  plan WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, userId])
+}
+
+model GymLog {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+  durationMinutes Int?
+  notes           String?
+  caloriesBurned  Float?
+  source          String   @default("manual") // manual | apple_health
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CalorieEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  mealType  String // breakfast | lunch | dinner | snack
+  foodName  String
+  calories  Float
+  protein   Float?
+  carbs     Float?
+  fat       Float?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HealthSync {
+  id             String   @id @default(cuid())
+  userId         String
+  workoutType    String?
+  startDate      DateTime
+  endDate        DateTime?
+  caloriesBurned Float
+  source         String   @default("apple_health")
+  raw            String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
