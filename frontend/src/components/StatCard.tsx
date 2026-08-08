@@ -20,14 +20,15 @@ export function StatCard({
     purple: "bg-violet-50 text-violet-600",
   };
 
+  // Vertical layout keeps these readable two-across on a phone.
   return (
-    <div className="card flex items-start justify-between">
-      <div>
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className="mt-1.5 text-2xl font-bold text-slate-900">{value}</p>
-        {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
-      </div>
-      {icon && <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</div>}
+    <div className="card p-4">
+      {icon && (
+        <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</div>
+      )}
+      <p className="text-xl font-bold leading-tight text-slate-900">{value}</p>
+      <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
+      {hint && <p className="mt-1 text-[11px] leading-snug text-slate-400">{hint}</p>}
     </div>
   );
 }

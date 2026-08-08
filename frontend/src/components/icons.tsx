@@ -25,7 +25,7 @@ export const IconDashboard = (p: IconProps) => (
 
 export const IconDumbbell = (p: IconProps) => (
   <svg {...base(p)}>
-    <path d="M6.5 6.5l11 11M4 9l3-3M17 20l3-3M2 11l3-3 3 3-3 3-3-3zM16 5l3 3 3-3-3-3-3 3zM9 9l6 6" />
+    <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11" />
   </svg>
 );
 

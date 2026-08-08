@@ -9,7 +9,7 @@ import { GymLog, GymLogSummary, WorkoutPlan } from "../types";
 import { StatCard } from "../components/StatCard";
 import { Spinner } from "../components/Spinner";
 import { EmptyState } from "../components/EmptyState";
-import { IconFlame, IconCalendarCheck, IconDumbbell, IconSparkles, IconPlus, IconChevronRight } from "../components/icons";
+import { IconFlame, IconCalendarCheck, IconDumbbell, IconSparkles, IconPlus, IconChevronRight, IconUtensils } from "../components/icons";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -45,28 +45,26 @@ export function Dashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Welcome back, {user?.name?.split(" ")[0]} 👋
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          Hey, {user?.name?.split(" ")[0]} 👋
         </h1>
         <p className="mt-1 text-sm text-slate-500">Here's how your training is going.</p>
       </div>
 
       {needsProfile && (
-        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-brand-900">Finish setting up your profile</p>
-            <p className="mt-0.5 text-sm text-brand-700">
-              Add your age, height and weight so we can calculate calorie targets and personalize your plans.
-            </p>
-          </div>
-          <Link to="/settings" className="btn-primary shrink-0">
+        <div className="mb-5 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <p className="text-sm font-semibold text-brand-900">Finish setting up your profile</p>
+          <p className="mt-0.5 text-sm text-brand-700">
+            Add your age, height and weight so we can calculate calorie targets and personalize your plans.
+          </p>
+          <Link to="/settings" className="btn-primary mt-3 w-full">
             Complete profile
           </Link>
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         <StatCard
           label="Current streak"
           value={`${summary?.currentStreak ?? 0} ${summary?.currentStreak === 1 ? "day" : "days"}`}
@@ -85,7 +83,7 @@ export function Dashboard() {
           label="Calories today"
           value={Math.round(today?.totals.calories ?? 0)}
           hint={calorieTarget ? `${caloriePct}% of ${calorieTarget} target` : "Set your profile for a target"}
-          icon={<IconFlame className="h-5 w-5" />}
+          icon={<IconUtensils className="h-5 w-5" />}
         />
         <StatCard
           label="Calories burned"
@@ -96,8 +94,8 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="mt-7 space-y-7">
+        <div>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-slate-900">Your workout plans</h2>
             <Link to="/plans" className="text-sm font-medium text-brand-600 hover:text-brand-700">
@@ -111,20 +109,20 @@ export function Dashboard() {
               description="Build one from scratch, or let the AI coach design a plan around your goals."
               icon={<IconDumbbell className="h-8 w-8" />}
               action={
-                <div className="flex flex-wrap justify-center gap-3">
-                  <Link to="/coach" className="btn-primary">
+                <div className="flex w-full flex-col gap-3">
+                  <Link to="/coach" className="btn-primary w-full">
                     <IconSparkles className="h-4 w-4" /> Generate with AI
                   </Link>
-                  <Link to="/plans/new" className="btn-secondary">
+                  <Link to="/plans/new" className="btn-secondary w-full">
                     <IconPlus className="h-4 w-4" /> Create manually
                   </Link>
                 </div>
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3">
               {plans.map((plan) => (
-                <Link key={plan.id} to={`/plans/${plan.id}`} className="card transition-shadow hover:shadow-md">
+                <Link key={plan.id} to={`/plans/${plan.id}`} className="card block active:bg-slate-50">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-900">{plan.name}</p>

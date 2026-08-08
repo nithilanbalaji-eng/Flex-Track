@@ -9,31 +9,65 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-100 text-slate-900 antialiased;
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Native-app feel: no iOS font inflation, no blue tap flash, no rubber-band
+     scroll past the edges, and no accidental text selection on chrome. */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Let text inside content still be selectable, but not the app chrome. */
+button,
+a,
+nav {
+  -webkit-touch-callout: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    /* min-h-11 = 44px, Apple's minimum recommended touch target. */
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700;
+    @apply btn bg-brand-600 text-white shadow-sm active:bg-brand-700;
   }
   .btn-secondary {
-    @apply btn bg-white text-slate-700 border border-slate-300 shadow-sm hover:bg-slate-50;
+    @apply btn border border-slate-300 bg-white text-slate-700 shadow-sm active:bg-slate-100;
   }
   .btn-danger {
-    @apply btn bg-red-50 text-red-600 hover:bg-red-100;
+    @apply btn bg-red-50 text-red-600 active:bg-red-100;
   }
   .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100;
+    @apply btn text-slate-600 active:bg-slate-100;
   }
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-card;
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-card;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100;
+    /* text-base (16px) is required on iOS - anything smaller makes Safari
+       zoom in when the field is focused. */
+    @apply w-full rounded-xl border border-slate-300 px-3.5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100;
   }
   .label {
     @apply mb-1.5 block text-sm font-medium text-slate-700;

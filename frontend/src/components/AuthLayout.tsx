@@ -11,48 +11,29 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20">
-        <div className="mx-auto w-full max-w-sm">
-          <Logo className="mb-10 text-lg" />
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
-          <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
-          <div className="mt-8">{children}</div>
-        </div>
-      </div>
-
-      <div className="relative hidden overflow-hidden bg-ink-900 lg:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-ink-800 to-ink-900" />
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:24px_24px]" />
-        <div className="relative flex h-full flex-col justify-between p-14 text-white">
-          <div />
-          <div>
-            <p className="text-3xl font-bold leading-tight">
+    <div className="min-h-[100dvh] bg-slate-100">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col bg-white shadow-xl sm:border-x sm:border-slate-200">
+        {/* Branded hero - gives the sign-in screen an app splash feel */}
+        <div className="relative overflow-hidden bg-ink-900 px-6 pb-10 pt-[max(3rem,calc(env(safe-area-inset-top)+2rem))] text-white">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-800 to-ink-900" />
+          <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:22px_22px]" />
+          <div className="relative">
+            <Logo className="text-lg text-white" />
+            <p className="mt-6 text-2xl font-bold leading-snug">
               Train together.
               <br />
               Track everything.
-              <br />
-              Never skip a day.
             </p>
-            <p className="mt-4 max-w-md text-sm text-white/70">
-              Build workout plans with your gym crew, log every session, hit your calorie targets, and let
-              an AI coach personalize your training around your goals.
+            <p className="mt-2 text-sm text-white/70">
+              Shared plans, streaks, calories and an AI coach — all in one place.
             </p>
           </div>
-          <div className="flex gap-8 text-sm text-white/60">
-            <div>
-              <p className="text-2xl font-bold text-white">Shared</p>
-              Plans
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">AI</p>
-              Coaching
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">Apple</p>
-              Health sync
-            </div>
-          </div>
+        </div>
+
+        <div className="flex-1 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">{title}</h1>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+          <div className="mt-7">{children}</div>
         </div>
       </div>
     </div>

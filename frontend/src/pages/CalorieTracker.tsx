@@ -98,14 +98,12 @@ export function CalorieTracker() {
       ) : (
         <>
           {!target?.target && (
-            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-amber-900">No calorie target yet</p>
-                <p className="mt-0.5 text-sm text-amber-800">
-                  Add your age, height and weight in Settings and we'll calculate your daily target and macros.
-                </p>
-              </div>
-              <Link to="/settings" className="btn-primary shrink-0">
+            <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">No calorie target yet</p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                Add your age, height and weight in Settings and we'll calculate your daily target and macros.
+              </p>
+              <Link to="/settings" className="btn-primary mt-3 w-full">
                 Add my stats
               </Link>
             </div>

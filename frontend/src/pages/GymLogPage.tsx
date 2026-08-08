@@ -95,7 +95,7 @@ export function GymLogPage() {
 
       <ErrorBanner message={error} />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3">
         <StatCard
           label="Current streak"
           value={`${summary?.currentStreak ?? 0} ${summary?.currentStreak === 1 ? "day" : "days"}`}
