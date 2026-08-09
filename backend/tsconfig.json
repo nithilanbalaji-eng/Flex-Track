@@ -1,9 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2021",
-    "module": "commonjs",
     "lib": ["ES2021"],
-    "moduleResolution": "node",
+    // "node16" replaces the legacy "node"/"node10" resolution, which newer
+    // TypeScript releases removed. package.json declares "type": "commonjs",
+    // so this still emits CommonJS and relative imports need no extensions.
+    "module": "node16",
+    "moduleResolution": "node16",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,

@@ -24,20 +24,25 @@ This takes Flex Track off `localhost` and onto real infrastructure:
 
 ### Get the two connection strings
 
-Go to **Project Settings → Database → Connection string** and copy both:
+Click the green **Connect** button at the top of the dashboard, then open the
+**ORMs** tab. Supabase hands you both variables already named correctly:
 
 | Variable | Which string | Port | Used for |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | Transaction pooler | `6543` | Every request at runtime |
-| `DIRECT_URL` | Direct connection | `5432` | Migrations only |
+| `DATABASE_URL` | Transaction-mode pooler | `6543` | Every request at runtime |
+| `DIRECT_URL` | Session-mode pooler | `5432` | Migrations only |
 
-Two things people get wrong here:
+What matters is the **mode**, not whether it goes through a pooler:
 
-- **Append `?pgbouncer=true` to `DATABASE_URL`.** Without it, Prisma issues
-  prepared statements that pgBouncer can't handle and you get intermittent
-  `prepared statement "s0" already exists` errors under load.
-- **`DIRECT_URL` must not go through the pooler.** Migrations need a real
-  session; the pooler will hang or fail partway through.
+- **Transaction mode (6543)** reuses connections aggressively, which is what you
+  want for lots of short queries — but it can't hold the session state migrations
+  need. It also can't handle Prisma's prepared statements, which is why
+  `?pgbouncer=true` must stay on the end of `DATABASE_URL`. Drop that flag and
+  you get intermittent `prepared statement "s0" already exists` errors under load.
+- **Session mode (5432)** keeps a connection for the life of the session, so
+  migrations work. This is Supabase's recommended `DIRECT_URL` on IPv4 networks.
+  (There is also a true direct connection at `db.<ref>.supabase.co`, but it's
+  IPv6-only, so most people should use the session pooler instead.)
 
 Replace `[YOUR-PASSWORD]` in both strings with your actual database password.
 
