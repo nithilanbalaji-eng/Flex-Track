@@ -1,14 +1,19 @@
-// Flex Track database schema
-// Default datasource is SQLite for zero-config local development.
-// Point DATABASE_URL at Postgres/MySQL in production - the schema is compatible.
+// Flex Track database schema (PostgreSQL / Supabase)
+//
+// Supabase exposes two connection strings and Prisma needs both:
+//   DATABASE_URL - the pooled connection (port 6543, append ?pgbouncer=true).
+//                  Used at runtime; pgBouncer handles many short-lived queries.
+//   DIRECT_URL   - the direct connection (port 5432). Used for migrations,
+//                  which need a real session and can't go through the pooler.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

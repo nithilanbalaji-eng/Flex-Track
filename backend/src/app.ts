@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env";
+import { ApiError } from "./utils/apiError";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
 import authRoutes from "./routes/auth.routes";
@@ -17,8 +18,25 @@ import healthRoutes from "./routes/health.routes";
 export function createApp() {
   const app = express();
 
+  // Railway/Render/Fly terminate TLS at a proxy. Without this, express-rate-limit
+  // sees every request as coming from the proxy's IP and rate-limits all users
+  // as one, and req.ip is useless.
+  app.set("trust proxy", 1);
+
   app.use(helmet());
-  app.use(cors({ origin: env.clientUrl, credentials: true }));
+  app.use(
+    cors({
+      origin(origin, callback) {
+        // Allow same-origin/non-browser callers (curl, health checks, the
+        // Apple Health webhook) which send no Origin header.
+        if (!origin) return callback(null, true);
+        const normalized = origin.replace(/\/$/, "");
+        if (env.clientUrls.includes(normalized)) return callback(null, true);
+        callback(ApiError.forbidden(`Origin not allowed by CORS: ${origin}`));
+      },
+      credentials: true,
+    })
+  );
   app.use(express.json({ limit: "1mb" }));
   app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 

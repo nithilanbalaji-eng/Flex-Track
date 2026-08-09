@@ -24,7 +24,7 @@ let an AI coach design your program, and pull burned calories straight from Appl
 
 ## Tech stack
 
-**Backend** — Node.js, Express, TypeScript, Prisma ORM, SQLite (swap `DATABASE_URL` for Postgres in production),
+**Backend** — Node.js, Express, TypeScript, Prisma ORM, PostgreSQL (Supabase),
 JWT auth, bcrypt, Zod validation, Helmet, CORS, rate limiting.
 
 **Frontend** — React 18, TypeScript, Vite, Tailwind CSS, React Router, Axios, date-fns.
@@ -52,15 +52,21 @@ Flex-Track/
 
 ## Getting started
 
-You need Node.js 18+.
+You need Node.js 18+ and a PostgreSQL database.
+
+The quickest way to get one is a free [Supabase](https://supabase.com) project — you can
+point local development at the same database you deploy against. See
+[DEPLOYMENT.md](DEPLOYMENT.md) for how to create one and where to find the two
+connection strings.
 
 ### 1. Backend
 
 ```bash
 cd backend
 npm install
-cp .env.example .env          # defaults work out of the box with SQLite
-npx prisma migrate dev        # creates the database and runs the seed
+cp .env.example .env          # then fill in DATABASE_URL and DIRECT_URL
+npx prisma migrate deploy     # creates the tables
+npx prisma db seed            # optional: demo accounts + a sample plan
 npm run dev                   # http://localhost:4000
 ```
 
@@ -85,6 +91,14 @@ The seed creates two demo accounts (password `password123`):
 - `sam@flextrack.dev`
 
 They share a group with invite code `GYMBROS1`. Or just create your own account.
+
+---
+
+## Deploying
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for a step-by-step guide to hosting Flex Track on
+Supabase (database), Railway (API) and Vercel (frontend), including the two Supabase
+connection strings Prisma needs and the CORS wiring between the two hosts.
 
 ---
 

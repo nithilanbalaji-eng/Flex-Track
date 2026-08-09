@@ -8,10 +8,20 @@ function required(name: string, fallback?: string): string {
   return value;
 }
 
+/** CLIENT_URL accepts a comma-separated list so preview deploys and the
+ *  production domain can both be allowed, e.g.
+ *  "https://flextrack.vercel.app,https://flextrack-git-dev.vercel.app" */
+function parseOrigins(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+}
+
 export const env = {
   port: Number(process.env.PORT ?? 4000),
   nodeEnv: process.env.NODE_ENV ?? "development",
-  clientUrl: process.env.CLIENT_URL ?? "http://localhost:5173",
+  clientUrls: parseOrigins(process.env.CLIENT_URL ?? "http://localhost:5173"),
   jwtSecret: required("JWT_SECRET", "dev-secret-change-me"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
