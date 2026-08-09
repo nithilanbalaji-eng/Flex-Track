@@ -5,8 +5,13 @@ This takes Flex Track off `localhost` and onto real infrastructure:
 | Piece | Runs on | Cost |
 | --- | --- | --- |
 | Postgres database | Supabase | Free tier |
-| Express API | Railway | Free trial, then ~$5/mo |
+| Express API | Railway or Render | Railway ~$5/mo · Render free |
 | React frontend | Vercel | Free tier |
+
+> **Render's free tier** works identically — same build command, same start
+> command, same environment variables. The one difference is that free instances
+> sleep after 15 minutes idle, so the first request after a quiet period takes
+> 50+ seconds to wake. Everything below applies to either host.
 
 > **Supabase hosts your database, not your API.** Supabase gives you Postgres,
 > Auth and Edge Functions — but a Node/Express server still needs a host of its
@@ -92,9 +97,21 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 You'll fill in `CLIENT_URL` properly in step 5, once Vercel has given you a URL.
 
-4. Railway runs `npm run build` then `npm start`. The start script runs
-   `prisma migrate deploy` first, so schema changes apply automatically on every
-   deploy.
+4. Set the **Build Command** to:
+
+```
+npm ci --include=dev && npm run build
+```
+
+`--include=dev` is not optional. `NODE_ENV=production` makes npm skip
+`devDependencies` by default, and that's where TypeScript and every `@types/*`
+package lives — without it the build fails with a wall of
+`Could not find a declaration file for module 'express'` errors.
+
+The start script is `prisma migrate deploy && node dist/index.js`, so schema
+changes apply automatically on every deploy. That's also why the `prisma` CLI is
+a regular dependency rather than a dev one: hosts prune `devDependencies` after
+building, and pruning it would break startup.
 5. Under **Settings → Networking**, click **Generate Domain**. You'll get
    something like `flex-track-production.up.railway.app`.
 

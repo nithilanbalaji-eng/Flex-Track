@@ -28,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "nanoid": "^3.3.7",
+    "prisma": "^5.20.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -37,7 +38,6 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.14.15",
-    "prisma": "^5.20.0",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4"
   },
