@@ -55,6 +55,24 @@ model User {
   gymLogs        GymLog[]
   calorieEntries CalorieEntry[]
   healthSyncs    HealthSync[]
+  resetTokens    PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id     String @id @default(cuid())
+  userId String
+
+  // Only the SHA-256 hash is stored. The plaintext token exists solely in the
+  // emailed link, so a leaked database can't be used to hijack accounts.
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime? // set on redemption so a link works exactly once
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Group {

@@ -54,9 +54,14 @@ export function Login() {
           <input id="email" type="email" required className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         </div>
         <div>
-          <label className="label" htmlFor="password">
-            Password
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label className="label" htmlFor="password">
+              Password
+            </label>
+            <Link to="/forgot-password" className="mb-1.5 text-sm font-medium text-brand-600">
+              Forgot?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"

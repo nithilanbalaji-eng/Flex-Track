@@ -18,6 +18,12 @@ export const authApi = {
   apple: (identityToken: string, fullName?: string) =>
     api.post<AuthResponse>("/auth/apple", { identityToken, fullName }).then((r) => r.data),
 
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>("/auth/forgot-password", { email }).then((r) => r.data),
+
+  resetPassword: (token: string, password: string) =>
+    api.post<AuthResponse>("/auth/reset-password", { token, password }).then((r) => r.data),
+
   me: () => api.get<{ user: User }>("/auth/me").then((r) => r.data.user),
 
   updateProfile: (data: Partial<User>) => api.put<{ user: User }>("/auth/me", data).then((r) => r.data.user),

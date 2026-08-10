@@ -9,6 +9,8 @@ import { Spinner } from "../components/Spinner";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { IconDumbbell, IconPlus, IconSparkles, IconChevronRight } from "../components/icons";
+import { AdSlot } from "../components/AdSlot";
+import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { extractErrorMessage } from "../api/client";
 
 export function WorkoutPlans() {
@@ -72,6 +74,9 @@ export function WorkoutPlans() {
           <PlanSection title="Shared with you" plans={shared} />
         </div>
       )}
+
+      <AdSlot placement="plans" />
+      <MedicalDisclaimer />
     </div>
   );
 }

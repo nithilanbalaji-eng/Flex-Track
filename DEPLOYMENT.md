@@ -194,6 +194,44 @@ your personal key from the Settings page in the body.
 
 ---
 
+## Email: password reset
+
+Password reset is fully built, but it needs an email provider to reach real
+users. **Without one, reset links are printed to the server log instead of being
+sent** — which works locally but means nobody can recover an account in
+production.
+
+### Setting it up (about 10 minutes)
+
+1. Sign up at [resend.com](https://resend.com) — the free tier covers 3,000
+   emails a month, which is plenty at this stage.
+2. Create an API key.
+3. Set these on your API host (Render/Railway):
+
+```
+RESEND_API_KEY=re_...
+MAIL_FROM=Flex Track <noreply@yourdomain.com>
+```
+
+**`MAIL_FROM` must use a domain you've verified with Resend.** The default
+`onboarding@resend.dev` only delivers to your own Resend account address, so
+reset emails to anyone else will silently go nowhere. If you don't own a domain
+yet, that's the one thing worth buying before launch.
+
+### How the flow is secured
+
+- Tokens are 256-bit random values, and only their **SHA-256 hash** is stored —
+  a database leak can't be replayed into account takeover.
+- Links expire after `PASSWORD_RESET_TTL_MINUTES` (default 60) and work **once**.
+- Requesting a new link **invalidates any outstanding ones**.
+- The endpoint returns the same response whether or not the address exists, so
+  it can't be used to discover who has an account.
+- Both endpoints are rate limited to 20 requests per hour per IP.
+- Accounts created through Google/Apple have no password to reset; they get an
+  email explaining which button to use rather than a dead link.
+
+---
+
 ## Monetization: ads and Premium
 
 Flex Track shows ads to everyone without an active subscription, and Premium

@@ -8,6 +8,7 @@ import { ErrorBanner } from "../components/ErrorBanner";
 import { Spinner } from "../components/Spinner";
 import { IconSparkles } from "../components/icons";
 import { DayBadge, DurationBadge } from "../components/DayBadge";
+import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { extractErrorMessage } from "../api/client";
 
 const STEPS = ["About you", "Your goal", "Your training", "Your schedule", "Review"] as const;
@@ -199,6 +200,8 @@ export function AICoach() {
             </div>
           ))}
         </div>
+
+        <MedicalDisclaimer />
       </div>
     );
   }
@@ -491,6 +494,8 @@ export function AICoach() {
           )}
         </div>
       </div>
+
+      <MedicalDisclaimer />
     </div>
   );
 }

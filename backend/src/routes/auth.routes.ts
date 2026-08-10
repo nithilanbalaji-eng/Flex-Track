@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
+import crypto from "crypto";
+import rateLimit from "express-rate-limit";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
+import { env } from "../config/env";
+import { sendMail, passwordResetEmail, oauthAccountEmail } from "../services/email";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
 import { hashPassword, comparePassword } from "../utils/password";
@@ -11,6 +15,25 @@ import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { isPremiumActive, shouldShowAds } from "../services/subscription";
 
 const router = Router();
+
+/**
+ * Password reset is a spam and brute-force target: the request side can be used
+ * to bombard someone's inbox, the redeem side to guess tokens. Both get a much
+ * tighter budget than the rest of the API.
+ */
+const resetRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  // Generous enough that phone networks sharing one IP behind CGNAT don't lock
+  // out real users, tight enough to stop inbox bombing. Guessing a token isn't
+  // the threat here - they're 256-bit and single-use.
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many password reset attempts. Please try again later." },
+});
+
+/** Reset tokens are stored hashed, so a database leak can't be replayed. */
+const hashToken = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
 
 const publicUser = (u: {
   id: string;
@@ -154,6 +177,91 @@ router.post(
 
     const token = signToken({ userId: user.id, email: user.email });
     res.json({ token, user: publicUser(user) });
+  })
+);
+
+/**
+ * Password reset, step 1: request a link.
+ *
+ * Always responds the same way whether or not the address exists — otherwise
+ * this endpoint becomes a way to discover who has an account.
+ */
+const forgotSchema = z.object({ email: z.string().email() });
+
+router.post(
+  "/forgot-password",
+  resetRequestLimiter,
+  asyncHandler(async (req, res) => {
+    const { email } = forgotSchema.parse(req.body);
+    const genericResponse = {
+      message: "If an account exists for that email, we've sent a link to reset the password.",
+    };
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.json(genericResponse);
+
+    // Accounts created through Google/Apple have no password to reset. Tell
+    // them how to get in rather than leaving them stuck waiting for a link.
+    if (!user.passwordHash) {
+      const mail = oauthAccountEmail(user.provider, `${env.clientUrls[0]}/login`);
+      await sendMail({ to: user.email, ...mail });
+      return res.json(genericResponse);
+    }
+
+    // Any earlier unused links stop working the moment a new one is issued.
+    await prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + env.passwordResetTtlMinutes * 60_000);
+    await prisma.passwordResetToken.create({
+      data: { userId: user.id, tokenHash: hashToken(token), expiresAt },
+    });
+
+    const resetUrl = `${env.clientUrls[0]}/reset-password?token=${token}`;
+    const mail = passwordResetEmail(resetUrl, env.passwordResetTtlMinutes);
+    await sendMail({ to: user.email, ...mail });
+
+    res.json(genericResponse);
+  })
+);
+
+/** Password reset, step 2: redeem the link and set a new password. */
+const resetSchema = z.object({
+  token: z.string().min(20),
+  password: z.string().min(8).max(100),
+});
+
+router.post(
+  "/reset-password",
+  resetRequestLimiter,
+  asyncHandler(async (req, res) => {
+    const { token, password } = resetSchema.parse(req.body);
+
+    const record = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { user: true },
+    });
+
+    const invalid = ApiError.badRequest("This reset link is invalid or has expired. Please request a new one.");
+    if (!record || record.usedAt || record.expiresAt < new Date()) throw invalid;
+
+    const passwordHash = await hashPassword(password);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+      prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+      // Belt and braces: burn any other outstanding links for this account.
+      prisma.passwordResetToken.updateMany({
+        where: { userId: record.userId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    // Sign them straight in so they don't have to type the new password again.
+    const jwt = signToken({ userId: record.user.id, email: record.user.email });
+    res.json({ token: jwt, user: publicUser(record.user) });
   })
 );
 
