@@ -7,16 +7,19 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-  signup: (data: { name: string; email: string; password: string }) =>
+  signup: (data: { name: string; email: string; password: string; acceptPrivacy: true }) =>
     api.post<AuthResponse>("/auth/signup", data).then((r) => r.data),
 
   login: (data: { email: string; password: string }) =>
     api.post<AuthResponse>("/auth/login", data).then((r) => r.data),
 
-  google: (idToken: string) => api.post<AuthResponse>("/auth/google", { idToken }).then((r) => r.data),
+  google: (idToken: string, acceptPrivacy?: boolean) =>
+    api.post<AuthResponse>("/auth/google", { idToken, acceptPrivacy }).then((r) => r.data),
 
-  apple: (identityToken: string, fullName?: string) =>
-    api.post<AuthResponse>("/auth/apple", { identityToken, fullName }).then((r) => r.data),
+  apple: (identityToken: string, fullName?: string, acceptPrivacy?: boolean) =>
+    api.post<AuthResponse>("/auth/apple", { identityToken, fullName, acceptPrivacy }).then((r) => r.data),
+
+  acceptPrivacy: () => api.post<{ user: User }>("/auth/accept-privacy").then((r) => r.data.user),
 
   forgotPassword: (email: string) =>
     api.post<{ message: string }>("/auth/forgot-password", { email }).then((r) => r.data),

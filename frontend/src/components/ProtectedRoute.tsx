@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Spinner } from "./Spinner";
+import { PrivacyConsentGate } from "./PrivacyConsentGate";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -14,5 +15,11 @@ export function ProtectedRoute() {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  return <Outlet />;
+
+  // Nothing behind here is reachable until the current policy is accepted.
+  return (
+    <PrivacyConsentGate>
+      <Outlet />
+    </PrivacyConsentGate>
+  );
 }

@@ -38,6 +38,11 @@ model User {
   // Personal key used to authenticate Apple Health webhook payloads
   healthApiKey   String   @unique
 
+  // Privacy policy consent. The version is stored alongside the timestamp so a
+  // future revision can re-prompt only the people who accepted an older one.
+  privacyAcceptedAt      DateTime?
+  privacyAcceptedVersion String?
+
   // Premium subscription. Ads are shown to everyone whose subscription is not
   // currently active. premiumUntil lets a cancelled subscription run out its
   // paid period instead of ending the moment it's cancelled.

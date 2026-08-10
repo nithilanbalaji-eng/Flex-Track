@@ -8,8 +8,8 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  loginWithGoogle: (idToken: string) => Promise<void>;
-  loginWithApple: (identityToken: string, fullName?: string) => Promise<void>;
+  loginWithGoogle: (idToken: string, acceptPrivacy?: boolean) => Promise<void>;
+  loginWithApple: (identityToken: string, fullName?: string, acceptPrivacy?: boolean) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   setUser: (u: User) => void;
@@ -47,19 +47,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    const { token, user: u } = await authApi.signup({ name, email, password });
+    // The signup form gates on its own checkbox; reaching here means accepted.
+    const { token, user: u } = await authApi.signup({ name, email, password, acceptPrivacy: true });
     setToken(token);
     setUser(u);
   };
 
-  const loginWithGoogle = async (idToken: string) => {
-    const { token, user: u } = await authApi.google(idToken);
+  /** acceptPrivacy is passed only from the sign-up screen, where consent was
+   *  ticked. From the login screen it's omitted, and the consent gate handles
+   *  any account that turns out to be new. */
+  const loginWithGoogle = async (idToken: string, acceptPrivacy?: boolean) => {
+    const { token, user: u } = await authApi.google(idToken, acceptPrivacy);
     setToken(token);
     setUser(u);
   };
 
-  const loginWithApple = async (identityToken: string, fullName?: string) => {
-    const { token, user: u } = await authApi.apple(identityToken, fullName);
+  const loginWithApple = async (identityToken: string, fullName?: string, acceptPrivacy?: boolean) => {
+    const { token, user: u } = await authApi.apple(identityToken, fullName, acceptPrivacy);
     setToken(token);
     setUser(u);
   };

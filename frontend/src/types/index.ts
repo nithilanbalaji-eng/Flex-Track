@@ -22,6 +22,10 @@ export interface User {
   isPremium: boolean;
   premiumUntil: string | null;
   showAds: boolean;
+  privacyAcceptedAt: string | null;
+  /** True until the user accepts the current privacy policy version. */
+  needsPrivacyConsent: boolean;
+  privacyPolicyVersion: string;
 }
 
 export interface Exercise {

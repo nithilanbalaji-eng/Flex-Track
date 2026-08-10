@@ -13,6 +13,7 @@ import { signToken } from "../utils/jwt";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "../services/oauth";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { isPremiumActive, shouldShowAds } from "../services/subscription";
+import { PRIVACY_POLICY_VERSION } from "../config/legal";
 
 const router = Router();
 
@@ -52,6 +53,8 @@ const publicUser = (u: {
   healthApiKey: string;
   isPremium: boolean;
   premiumUntil: Date | null;
+  privacyAcceptedAt: Date | null;
+  privacyAcceptedVersion: string | null;
 }) => ({
   id: u.id,
   email: u.email,
@@ -70,12 +73,22 @@ const publicUser = (u: {
   isPremium: isPremiumActive(u),
   premiumUntil: u.premiumUntil,
   showAds: shouldShowAds(u),
+  privacyAcceptedAt: u.privacyAcceptedAt,
+  // True when the user has never accepted, or accepted an older revision. The
+  // client blocks the app until this clears.
+  needsPrivacyConsent: u.privacyAcceptedVersion !== PRIVACY_POLICY_VERSION,
+  privacyPolicyVersion: PRIVACY_POLICY_VERSION,
 });
 
 const signupSchema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email(),
   password: z.string().min(8).max(100),
+  // Consent is captured at the point of account creation. Enforced server-side
+  // so it can't be skipped by calling the API directly.
+  acceptPrivacy: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Privacy Policy to create an account" }),
+  }),
 });
 
 router.post(
@@ -94,6 +107,8 @@ router.post(
         passwordHash,
         provider: "local",
         healthApiKey: nanoid(32),
+        privacyAcceptedAt: new Date(),
+        privacyAcceptedVersion: PRIVACY_POLICY_VERSION,
       },
     });
 
@@ -125,12 +140,17 @@ router.post(
   })
 );
 
-const googleSchema = z.object({ idToken: z.string().min(10) });
+const googleSchema = z.object({
+  idToken: z.string().min(10),
+  /** Set when the button was used from a screen that showed the consent tick.
+   *  If absent, the client's consent gate catches them after sign-in. */
+  acceptPrivacy: z.boolean().optional(),
+});
 
 router.post(
   "/google",
   asyncHandler(async (req, res) => {
-    const { idToken } = googleSchema.parse(req.body);
+    const { idToken, acceptPrivacy } = googleSchema.parse(req.body);
     const profile = await verifyGoogleIdToken(idToken);
 
     let user = await prisma.user.findUnique({ where: { email: profile.email } });
@@ -142,6 +162,9 @@ router.post(
           provider: "google",
           providerId: profile.providerId,
           healthApiKey: nanoid(32),
+          ...(acceptPrivacy
+            ? { privacyAcceptedAt: new Date(), privacyAcceptedVersion: PRIVACY_POLICY_VERSION }
+            : {}),
         },
       });
     }
@@ -154,12 +177,13 @@ router.post(
 const appleSchema = z.object({
   identityToken: z.string().min(10),
   fullName: z.string().optional(),
+  acceptPrivacy: z.boolean().optional(),
 });
 
 router.post(
   "/apple",
   asyncHandler(async (req, res) => {
-    const { identityToken, fullName } = appleSchema.parse(req.body);
+    const { identityToken, fullName, acceptPrivacy } = appleSchema.parse(req.body);
     const profile = await verifyAppleIdToken(identityToken, fullName);
 
     let user = await prisma.user.findUnique({ where: { email: profile.email } });
@@ -171,6 +195,9 @@ router.post(
           provider: "apple",
           providerId: profile.providerId,
           healthApiKey: nanoid(32),
+          ...(acceptPrivacy
+            ? { privacyAcceptedAt: new Date(), privacyAcceptedVersion: PRIVACY_POLICY_VERSION }
+            : {}),
         },
       });
     }
@@ -361,6 +388,25 @@ router.delete(
     });
 
     res.status(204).send();
+  })
+);
+
+/**
+ * Records acceptance of the current privacy policy.
+ *
+ * Used by the consent gate, which catches people the signup checkbox can't:
+ * accounts created through Google or Apple, and anyone who registered before
+ * a given revision of the policy existed.
+ */
+router.post(
+  "/accept-privacy",
+  requireAuth,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const user = await prisma.user.update({
+      where: { id: req.userId! },
+      data: { privacyAcceptedAt: new Date(), privacyAcceptedVersion: PRIVACY_POLICY_VERSION },
+    });
+    res.json({ user: publicUser(user) });
   })
 );
 

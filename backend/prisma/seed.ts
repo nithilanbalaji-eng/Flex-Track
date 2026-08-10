@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
+import { PRIVACY_POLICY_VERSION } from "../src/config/legal";
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,8 @@ async function main() {
       passwordHash,
       provider: "local",
       healthApiKey: nanoid(32),
+      privacyAcceptedAt: new Date(),
+      privacyAcceptedVersion: PRIVACY_POLICY_VERSION,
       age: 28,
       sex: "male",
       heightCm: 178,
@@ -36,6 +39,8 @@ async function main() {
       passwordHash,
       provider: "local",
       healthApiKey: nanoid(32),
+      privacyAcceptedAt: new Date(),
+      privacyAcceptedVersion: PRIVACY_POLICY_VERSION,
       age: 25,
       sex: "female",
       heightCm: 165,

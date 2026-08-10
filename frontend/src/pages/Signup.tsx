@@ -13,8 +13,18 @@ export function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  /** Social sign-up creates an account too, so it needs consent first. */
+  const requireConsent = () => {
+    if (!accepted) {
+      setError("Please accept the Privacy Policy to continue.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,6 +33,8 @@ export function Signup() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    if (!requireConsent()) return;
+
     setLoading(true);
     try {
       await signup(name, email, password);
@@ -37,14 +49,26 @@ export function Signup() {
   return (
     <AuthLayout title="Create your account" subtitle="Start planning workouts with your crew in under a minute.">
       <div className="space-y-3">
-        <GoogleButton
-          text="signup_with"
-          onToken={(idToken) => loginWithGoogle(idToken).then(() => navigate("/coach")).catch((err) => setError(extractErrorMessage(err)))}
-        />
-        <AppleButton
-          onToken={(token, n) => loginWithApple(token, n).then(() => navigate("/coach")).catch((err) => setError(extractErrorMessage(err)))}
-          onError={setError}
-        />
+        <div onClickCapture={(e) => !accepted && (e.preventDefault(), e.stopPropagation(), requireConsent())}>
+          <GoogleButton
+            text="signup_with"
+            onToken={(idToken) =>
+              loginWithGoogle(idToken, true)
+                .then(() => navigate("/coach"))
+                .catch((err) => setError(extractErrorMessage(err)))
+            }
+          />
+        </div>
+        <div onClickCapture={(e) => !accepted && (e.preventDefault(), e.stopPropagation(), requireConsent())}>
+          <AppleButton
+            onToken={(token, n) =>
+              loginWithApple(token, n, true)
+                .then(() => navigate("/coach"))
+                .catch((err) => setError(extractErrorMessage(err)))
+            }
+            onError={setError}
+          />
+        </div>
       </div>
 
       <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase text-slate-400">
@@ -82,7 +106,26 @@ export function Signup() {
             placeholder="At least 8 characters"
           />
         </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
+
+        <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-3.5">
+          <input
+            id="acceptPrivacy"
+            type="checkbox"
+            required
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+          />
+          <span className="text-sm text-slate-600">
+            I've read and accept the{" "}
+            <Link to="/privacy" target="_blank" className="font-semibold text-brand-600 underline underline-offset-2">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+
+        <button type="submit" disabled={loading || !accepted} className="btn-primary w-full">
           {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
