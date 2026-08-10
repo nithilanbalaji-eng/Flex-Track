@@ -12,6 +12,8 @@ export interface Questionnaire {
   equipment: Equipment;
   injuries?: string;
   activityLevel: ActivityLevel;
+  /** Minutes available on each training day, in order. */
+  dayMinutes?: number[];
   saveProfile?: boolean;
 }
 
@@ -23,7 +25,12 @@ export const aiApi = {
       .post<{ plan: WorkoutPlan }>("/ai/save-plan", {
         name: plan.name,
         description: plan.description,
-        days: plan.days,
+        days: plan.days.map((d) => ({
+          dayNumber: d.dayNumber,
+          title: d.title,
+          targetMinutes: d.targetMinutes ?? undefined,
+          exercises: d.exercises,
+        })),
       })
       .then((r) => r.data.plan),
 };

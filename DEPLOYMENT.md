@@ -194,6 +194,72 @@ your personal key from the Settings page in the body.
 
 ---
 
+## Monetization: ads and Premium
+
+Flex Track shows ads to everyone without an active subscription, and Premium
+($2.99/month) removes them. The gating is already built and working end to end —
+what's missing is a payment provider, because that needs your accounts.
+
+### How the pieces fit
+
+`showAds` is computed **on the server** from the user's subscription state and
+returned with the user object, so a client can't unlock Premium by editing local
+storage. `<AdSlot>` renders nothing at all when it's false.
+
+Ad placements currently live on the dashboard, the gym log, the crews page and
+plan detail. Add more by dropping `<AdSlot placement="somewhere" />` into a page.
+
+### Wiring real ads
+
+The `<AdSlot>` component renders an in-house promo rather than a fake advert.
+Replace its body with your ad network's unit and leave the surrounding gating
+alone:
+
+- **Web** — Google AdSense. Requires site approval, which takes a few days and
+  wants real content and a privacy policy in place first.
+- **iOS** — Google AdMob, via the native app. AdSense units do not work inside a
+  native app wrapper.
+
+### Taking payment — and the Apple rule that governs it
+
+**Apple requires In-App Purchase for digital subscriptions and rejects Stripe
+for them.** They take 30% in year one, 15% after that. This is not negotiable
+for an App Store build, so the backend supports both paths:
+
+| Surface | Provider | Endpoint |
+| --- | --- | --- |
+| Web (Vercel) | Stripe | `POST /api/subscription/checkout` |
+| iOS app | Apple IAP | `POST /api/subscription/apple/verify` |
+
+Both converge on the same subscription state, so the rest of the app never needs
+to know which one paid.
+
+**To enable Stripe** — create a $2.99/month recurring price, then set on your API
+host:
+
+```
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PRICE_ID=price_...
+```
+
+Until those are set, `/checkout` returns a clear 501 and the paywall shows an
+honest message instead of a broken flow.
+
+**To enable Apple IAP** — create an auto-renewable subscription in App Store
+Connect with product id `flextrack_premium_monthly`, then set:
+
+```
+APPLE_IAP_SHARED_SECRET=...
+```
+
+### Testing Premium without paying
+
+In development only, the paywall shows a **"Dev: activate without paying"**
+button (`POST /api/subscription/dev-activate`). It refuses to run when
+`NODE_ENV=production`, so it can't be abused on your live deployment.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause |

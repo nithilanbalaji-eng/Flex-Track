@@ -38,6 +38,14 @@ model User {
   // Personal key used to authenticate Apple Health webhook payloads
   healthApiKey   String   @unique
 
+  // Premium subscription. Ads are shown to everyone whose subscription is not
+  // currently active. premiumUntil lets a cancelled subscription run out its
+  // paid period instead of ending the moment it's cancelled.
+  isPremium         Boolean   @default(false)
+  premiumUntil      DateTime?
+  subscriptionId    String? // Stripe subscription id, or the Apple original_transaction_id
+  subscriptionStore String? // stripe | apple | manual
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -88,6 +96,7 @@ model WorkoutPlan {
   group     Group?             @relation(fields: [groupId], references: [id])
   days      WorkoutDay[]
   shares    WorkoutPlanShare[]
+  gymLogs   GymLog[]
 }
 
 model WorkoutDay {
@@ -96,8 +105,12 @@ model WorkoutDay {
   dayNumber Int
   title     String
 
+  /// Target session length in minutes, used by the AI coach to size the workout.
+  targetMinutes Int?
+
   plan      WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
   exercises WorkoutExercise[]
+  gymLogs   GymLog[]
 }
 
 model WorkoutExercise {
@@ -135,7 +148,15 @@ model GymLog {
   source          String   @default("manual") // manual | apple_health
   createdAt       DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Which workout was actually performed. Both optional so a session can still
+  // be logged without following a plan. SetNull keeps history readable if the
+  // plan is later deleted or restructured.
+  planId    String?
+  planDayId String?
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan    WorkoutPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  planDay WorkoutDay?  @relation(fields: [planDayId], references: [id], onDelete: SetNull)
 }
 
 model CalorieEntry {

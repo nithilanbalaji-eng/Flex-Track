@@ -7,9 +7,14 @@ import { PageHeader } from "../components/PageHeader";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Spinner } from "../components/Spinner";
 import { IconSparkles } from "../components/icons";
+import { DayBadge, DurationBadge } from "../components/DayBadge";
 import { extractErrorMessage } from "../api/client";
 
-const STEPS = ["About you", "Your goal", "Your training", "Review"] as const;
+const STEPS = ["About you", "Your goal", "Your training", "Your schedule", "Review"] as const;
+
+/** Quick-pick session lengths, in minutes. */
+const DURATION_PRESETS = [30, 45, 60, 75, 90];
+const DEFAULT_SESSION_MINUTES = 60;
 
 interface OptionCardProps<T extends string> {
   value: T;
@@ -63,6 +68,18 @@ export function AICoach() {
   const set = <K extends keyof Questionnaire>(key: K, value: Questionnaire[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const days = form.daysPerWeek ?? 4;
+
+  /** Minutes available on a given training day, defaulting to an hour. */
+  const minutesFor = (index: number) => form.dayMinutes?.[index] ?? DEFAULT_SESSION_MINUTES;
+
+  const setMinutesFor = (index: number, value: number) => {
+    const next = Array.from({ length: days }, (_, i) => (i === index ? value : minutesFor(i)));
+    set("dayMinutes", next);
+  };
+
+  const setAllMinutes = (value: number) => set("dayMinutes", Array.from({ length: days }, () => value));
+
   const stepValid = () => {
     if (step === 0) return Boolean(form.age && form.sex && form.heightCm && form.weightKg);
     if (step === 1) return Boolean(form.goal && form.activityLevel);
@@ -74,7 +91,13 @@ export function AICoach() {
     setError(null);
     setGenerating(true);
     try {
-      const generated = await aiApi.generatePlan(form as Questionnaire);
+      // Always send one duration per training day — the API rejects a mismatch,
+      // and the user may have skipped past the schedule step.
+      const payload: Questionnaire = {
+        ...(form as Questionnaire),
+        dayMinutes: Array.from({ length: days }, (_, i) => minutesFor(i)),
+      };
+      const generated = await aiApi.generatePlan(payload);
       setPlan(generated);
       if (form.saveProfile) await refreshUser();
     } catch (err) {
@@ -140,11 +163,13 @@ export function AICoach() {
         <div className="space-y-4">
           {plan.days.map((day) => (
             <div key={day.dayNumber} className="card">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
-                  {day.dayNumber}
-                </div>
-                <h3 className="font-semibold text-slate-900">{day.title}</h3>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <DayBadge dayNumber={day.dayNumber} />
+                <DurationBadge minutes={day.targetMinutes} />
+                {day.estimatedMinutes != null && day.targetMinutes != null && (
+                  <span className="text-xs text-slate-400">≈{day.estimatedMinutes} min planned</span>
+                )}
+                <h3 className="w-full font-semibold text-slate-900">{day.title}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -342,6 +367,69 @@ export function AICoach() {
 
         {step === 3 && (
           <div className="space-y-5">
+            <div>
+              <h2 className="font-semibold text-slate-900">How long can you train each day?</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Some days you've got an hour and a half, some days you've got half an hour. Set each one and
+                your coach will size that session to fit — no more running out of time halfway through.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
+              <span className="text-xs font-medium text-slate-500">Same every day:</span>
+              {DURATION_PRESETS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setAllMinutes(m)}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 active:bg-slate-100"
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              {Array.from({ length: days }, (_, i) => (
+                <div key={i} className="rounded-xl border border-slate-200 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-800">Day {i + 1}</span>
+                    <span className="text-sm font-medium text-brand-600">{minutesFor(i)} min</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {DURATION_PRESETS.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMinutesFor(i, m)}
+                        className={`h-10 flex-1 rounded-lg border text-sm font-semibold transition-colors ${
+                          minutesFor(i) === m
+                            ? "border-brand-500 bg-brand-600 text-white"
+                            : "border-slate-200 bg-white text-slate-600"
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="range"
+                    min={15}
+                    max={180}
+                    step={5}
+                    value={minutesFor(i)}
+                    onChange={(e) => setMinutesFor(i, Number(e.target.value))}
+                    className="mt-3 w-full accent-brand-600"
+                    aria-label={`Minutes available on day ${i + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-5">
             <h2 className="font-semibold text-slate-900">Ready to build your plan</h2>
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Review label="Age" value={form.age} />
@@ -353,6 +441,10 @@ export function AICoach() {
               <Review label="Experience" value={form.experience} />
               <Review label="Equipment" value={form.equipment?.replace("_", " ")} />
               <Review label="Days per week" value={form.daysPerWeek} />
+              <Review
+                label="Session lengths"
+                value={Array.from({ length: days }, (_, i) => `${minutesFor(i)}m`).join(" · ")}
+              />
               <Review label="Limitations" value={form.injuries || "None"} />
             </dl>
 

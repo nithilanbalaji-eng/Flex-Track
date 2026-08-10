@@ -78,10 +78,6 @@ export function Login() {
           Create an account
         </Link>
       </p>
-
-      <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs text-slate-400">
-        Demo login: alex@flextrack.dev / password123
-      </p>
     </AuthLayout>
   );
 }

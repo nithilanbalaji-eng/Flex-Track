@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../api/auth";
@@ -6,7 +7,7 @@ import { healthApi } from "../api/health";
 import { HealthSync, Goal, ActivityLevel, Experience, Equipment, Sex } from "../types";
 import { PageHeader } from "../components/PageHeader";
 import { ErrorBanner } from "../components/ErrorBanner";
-import { IconApple } from "../components/icons";
+import { IconApple, IconSparkles, IconChevronRight } from "../components/icons";
 import { extractErrorMessage } from "../api/client";
 
 export function Settings() {
@@ -90,6 +91,33 @@ export function Settings() {
       <PageHeader title="Settings" description="Your profile powers calorie targets and AI plan personalization." />
 
       <ErrorBanner message={error} />
+
+      {/* Subscription status, right at the top where people look for it. */}
+      <Link
+        to="/premium"
+        className={`card mb-6 flex items-center gap-3 active:bg-slate-50 ${
+          user?.isPremium ? "border-brand-200 bg-brand-50" : ""
+        }`}
+      >
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+            user?.isPremium ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          <IconSparkles className="h-6 w-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-slate-900">{user?.isPremium ? "Premium" : "Flex Track Premium"}</p>
+          <p className="text-sm text-slate-500">
+            {user?.isPremium
+              ? user.premiumUntil
+                ? `Renews ${format(parseISO(user.premiumUntil), "d MMM yyyy")}`
+                : "Active — no ads"
+              : "Remove ads for $2.99/month"}
+          </p>
+        </div>
+        <IconChevronRight className="h-5 w-5 shrink-0 text-slate-300" />
+      </Link>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <form onSubmit={handleSave} className="card lg:col-span-2">

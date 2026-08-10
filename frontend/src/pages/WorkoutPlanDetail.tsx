@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import { Spinner } from "../components/Spinner";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { IconTrash, IconUsers } from "../components/icons";
+import { DayBadge, DurationBadge } from "../components/DayBadge";
+import { AdSlot } from "../components/AdSlot";
 import { extractErrorMessage } from "../api/client";
 
 export function WorkoutPlanDetail() {
@@ -125,11 +127,10 @@ export function WorkoutPlanDetail() {
         <div className="space-y-4 lg:col-span-2">
           {plan.days.map((day) => (
             <div key={day.id ?? day.dayNumber} className="card">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
-                  {day.dayNumber}
-                </div>
-                <h2 className="font-semibold text-slate-900">{day.title}</h2>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <DayBadge dayNumber={day.dayNumber} />
+                <DurationBadge minutes={day.targetMinutes} />
+                <h2 className="w-full font-semibold text-slate-900">{day.title}</h2>
               </div>
 
               <div className="overflow-x-auto">

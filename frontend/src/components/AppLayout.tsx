@@ -14,20 +14,20 @@ import {
   IconClose,
 } from "./icons";
 
-/** Primary destinations, surfaced in the bottom tab bar. Five is the practical
- *  maximum before labels start truncating on a 360px-wide phone. */
+/** Primary destinations, surfaced in the bottom tab bar. Labels are kept to one
+ *  short word so six fit without truncating on a 360px-wide phone. */
 const TABS = [
   { to: "/", label: "Home", icon: IconDashboard, end: true },
   { to: "/plans", label: "Plans", icon: IconDumbbell },
   { to: "/coach", label: "Coach", icon: IconSparkles },
   { to: "/gym-log", label: "Log", icon: IconCalendarCheck },
   { to: "/calories", label: "Food", icon: IconUtensils },
+  { to: "/crews", label: "Crews", icon: IconUsers },
 ];
 
 /** Secondary destinations, reached from the account sheet. */
 const SHEET_LINKS = [
-  { to: "/groups", label: "Groups", icon: IconUsers, hint: "Train with friends" },
-  { to: "/settings", label: "Settings", icon: IconSettings, hint: "Profile & Apple Health" },
+  { to: "/settings", label: "Settings", icon: IconSettings, hint: "Profile, Apple Health & subscription" },
 ];
 
 export function AppLayout() {
@@ -75,14 +75,14 @@ export function AppLayout() {
                 to={tab.to}
                 end={tab.end}
                 className={({ isActive }) =>
-                  `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors active:scale-95 ${
+                  `flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors active:scale-95 ${
                     isActive ? "text-brand-600" : "text-slate-400"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <tab.icon className={`h-6 w-6 ${isActive ? "stroke-[2.4]" : ""}`} />
+                    <tab.icon className={`h-[22px] w-[22px] ${isActive ? "stroke-[2.4]" : ""}`} />
                     {tab.label}
                   </>
                 )}

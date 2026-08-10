@@ -8,6 +8,7 @@ import { hashPassword, comparePassword } from "../utils/password";
 import { signToken } from "../utils/jwt";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "../services/oauth";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { isPremiumActive, shouldShowAds } from "../services/subscription";
 
 const router = Router();
 
@@ -26,6 +27,8 @@ const publicUser = (u: {
   experience: string | null;
   equipment: string | null;
   healthApiKey: string;
+  isPremium: boolean;
+  premiumUntil: Date | null;
 }) => ({
   id: u.id,
   email: u.email,
@@ -41,6 +44,9 @@ const publicUser = (u: {
   experience: u.experience,
   equipment: u.equipment,
   healthApiKey: u.healthApiKey,
+  isPremium: isPremiumActive(u),
+  premiumUntil: u.premiumUntil,
+  showAds: shouldShowAds(u),
 });
 
 const signupSchema = z.object({

@@ -7,6 +7,7 @@ import { PageHeader } from "../components/PageHeader";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Spinner } from "../components/Spinner";
 import { IconPlus, IconTrash } from "../components/icons";
+import { DayBadge } from "../components/DayBadge";
 import { extractErrorMessage } from "../api/client";
 
 const emptyDay = (dayNumber: number): WorkoutDay => ({
@@ -202,9 +203,7 @@ export function PlanBuilder() {
         {days.map((day, dayIdx) => (
           <div key={dayIdx} className="card">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
-                {day.dayNumber}
-              </div>
+              <DayBadge dayNumber={day.dayNumber} />
               <input
                 className="input flex-1 font-semibold"
                 value={day.title}

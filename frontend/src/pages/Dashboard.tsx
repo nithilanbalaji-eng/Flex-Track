@@ -9,6 +9,7 @@ import { GymLog, GymLogSummary, WorkoutPlan } from "../types";
 import { StatCard } from "../components/StatCard";
 import { Spinner } from "../components/Spinner";
 import { EmptyState } from "../components/EmptyState";
+import { AdSlot } from "../components/AdSlot";
 import { IconFlame, IconCalendarCheck, IconDumbbell, IconSparkles, IconPlus, IconChevronRight, IconUtensils } from "../components/icons";
 
 export function Dashboard() {
@@ -182,6 +183,8 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      <AdSlot placement="dashboard" />
     </div>
   );
 }

@@ -8,19 +8,26 @@ import { generateWorkoutPlan, WorkoutQuestionnaire } from "../services/aiWorkout
 const router = Router();
 router.use(requireAuth);
 
-const questionnaireSchema = z.object({
-  age: z.number().int().min(10).max(100),
-  sex: z.enum(["male", "female", "other"]),
-  heightCm: z.number().min(50).max(260),
-  weightKg: z.number().min(20).max(400),
-  goal: z.enum(["muscle_gain", "fat_loss", "maintenance", "strength", "endurance"]),
-  experience: z.enum(["beginner", "intermediate", "advanced"]),
-  daysPerWeek: z.number().int().min(1).max(7),
-  equipment: z.enum(["full_gym", "home_basic", "bodyweight_only"]),
-  injuries: z.string().max(500).optional(),
-  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
-  saveProfile: z.boolean().optional(),
-});
+const questionnaireSchema = z
+  .object({
+    age: z.number().int().min(10).max(100),
+    sex: z.enum(["male", "female", "other"]),
+    heightCm: z.number().min(50).max(260),
+    weightKg: z.number().min(20).max(400),
+    goal: z.enum(["muscle_gain", "fat_loss", "maintenance", "strength", "endurance"]),
+    experience: z.enum(["beginner", "intermediate", "advanced"]),
+    daysPerWeek: z.number().int().min(1).max(7),
+    equipment: z.enum(["full_gym", "home_basic", "bodyweight_only"]),
+    injuries: z.string().max(500).optional(),
+    activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
+    /** Minutes available on each training day, in order. */
+    dayMinutes: z.array(z.number().int().min(15).max(180)).min(1).max(7).optional(),
+    saveProfile: z.boolean().optional(),
+  })
+  .refine((v) => !v.dayMinutes || v.dayMinutes.length === v.daysPerWeek, {
+    message: "dayMinutes must have one entry per training day",
+    path: ["dayMinutes"],
+  });
 
 router.post(
   "/generate-plan",
@@ -57,6 +64,7 @@ const saveSchema = z.object({
     z.object({
       dayNumber: z.number().int(),
       title: z.string(),
+      targetMinutes: z.number().int().min(1).max(300).optional(),
       exercises: z.array(
         z.object({
           name: z.string(),
@@ -87,6 +95,7 @@ router.post(
           create: data.days.map((d) => ({
             dayNumber: d.dayNumber,
             title: d.title,
+            targetMinutes: d.targetMinutes,
             exercises: {
               create: d.exercises
                 .filter((e) => e.sets > 0)

@@ -30,7 +30,11 @@ export const env = {
     teamId: process.env.APPLE_TEAM_ID ?? "",
     keyId: process.env.APPLE_KEY_ID ?? "",
     privateKey: process.env.APPLE_PRIVATE_KEY ?? "",
+    /** App Store Connect shared secret, for verifying In-App Purchases. */
+    sharedSecret: process.env.APPLE_IAP_SHARED_SECRET ?? "",
   },
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripePriceId: process.env.STRIPE_PRICE_ID ?? "",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5",
 };

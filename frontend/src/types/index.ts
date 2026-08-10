@@ -19,6 +19,9 @@ export interface User {
   experience: Experience | null;
   equipment: Equipment | null;
   healthApiKey: string;
+  isPremium: boolean;
+  premiumUntil: string | null;
+  showAds: boolean;
 }
 
 export interface Exercise {
@@ -34,6 +37,8 @@ export interface WorkoutDay {
   id?: string;
   dayNumber: number;
   title: string;
+  targetMinutes?: number | null;
+  estimatedMinutes?: number | null;
   exercises: Exercise[];
 }
 
@@ -67,6 +72,22 @@ export interface GymLog {
   notes?: string | null;
   caloriesBurned?: number | null;
   source: string;
+  planId?: string | null;
+  planDayId?: string | null;
+  plan?: { id: string; name: string } | null;
+  planDay?: { id: string; dayNumber: number; title: string } | null;
+}
+
+/** How much history the gym log calendar is showing. */
+export type LogRange = "week" | "month" | "6months" | "year";
+
+export interface SubscriptionStatus {
+  isPremium: boolean;
+  showAds: boolean;
+  premiumUntil: string | null;
+  store: string | null;
+  priceUsd: number;
+  productId: string;
 }
 
 export interface GymLogSummary {
@@ -113,3 +134,6 @@ export interface GeneratedPlan {
   coachNotes: string;
   source: "claude" | "rule_based";
 }
+
+/** A crew is a group of friends who train together and share plans. */
+export type Crew = Group;

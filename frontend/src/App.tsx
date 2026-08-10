@@ -10,8 +10,9 @@ import { PlanBuilder } from "./pages/PlanBuilder";
 import { AICoach } from "./pages/AICoach";
 import { GymLogPage } from "./pages/GymLogPage";
 import { CalorieTracker } from "./pages/CalorieTracker";
-import { Groups } from "./pages/Groups";
+import { Crews } from "./pages/Crews";
 import { Settings } from "./pages/Settings";
+import { Premium } from "./pages/Premium";
 import { NotFound } from "./pages/NotFound";
 
 export default function App() {
@@ -30,8 +31,11 @@ export default function App() {
           <Route path="/coach" element={<AICoach />} />
           <Route path="/gym-log" element={<GymLogPage />} />
           <Route path="/calories" element={<CalorieTracker />} />
-          <Route path="/groups" element={<Groups />} />
+          <Route path="/crews" element={<Crews />} />
+          {/* Older links and bookmarks still land somewhere sensible. */}
+          <Route path="/groups" element={<Navigate to="/crews" replace />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/premium" element={<Premium />} />
         </Route>
       </Route>
 

@@ -13,17 +13,41 @@ const createLogSchema = z.object({
   durationMinutes: z.number().int().min(1).max(600).optional(),
   notes: z.string().max(500).optional(),
   caloriesBurned: z.number().min(0).max(5000).optional(),
+  /** Which workout was performed, if the session followed a plan. */
+  planId: z.string().optional(),
+  planDayId: z.string().optional(),
 });
+
+/** Included so history can show "Day 2 — Pull" instead of just a date. */
+const logInclude = {
+  plan: { select: { id: true, name: true } },
+  planDay: { select: { id: true, dayNumber: true, title: true } },
+};
+
+/** How far back the calendar view is asking for. */
+const RANGE_DAYS: Record<string, number> = {
+  week: 7,
+  month: 31,
+  "6months": 183,
+  year: 366,
+};
 
 router.get(
   "/",
   asyncHandler(async (req: AuthedRequest, res) => {
+    const range = typeof req.query.range === "string" ? req.query.range : "6months";
+    const days = RANGE_DAYS[range] ?? RANGE_DAYS["6months"];
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    since.setHours(0, 0, 0, 0);
+
     const logs = await prisma.gymLog.findMany({
-      where: { userId: req.userId! },
+      where: { userId: req.userId!, date: { gte: since } },
       orderBy: { date: "desc" },
-      take: 365,
+      include: logInclude,
+      take: 500,
     });
-    res.json({ logs });
+    res.json({ logs, range, since: since.toISOString() });
   })
 );
 
@@ -90,6 +114,29 @@ router.post(
   "/",
   asyncHandler(async (req: AuthedRequest, res) => {
     const data = createLogSchema.parse(req.body);
+
+    // Only attach a plan day the user can actually see, and make sure the day
+    // really belongs to the plan being referenced.
+    if (data.planDayId) {
+      const day = await prisma.workoutDay.findUnique({
+        where: { id: data.planDayId },
+        include: { plan: { include: { shares: true, group: { include: { members: true } } } } },
+      });
+      if (!day) throw ApiError.notFound("Workout day not found");
+
+      const plan = day.plan;
+      const canSee =
+        plan.createdById === req.userId ||
+        plan.shares.some((s) => s.userId === req.userId) ||
+        (plan.group?.members.some((m) => m.userId === req.userId) ?? false);
+      if (!canSee) throw ApiError.forbidden("You don't have access to that workout plan");
+
+      if (data.planId && data.planId !== plan.id) {
+        throw ApiError.badRequest("planDayId does not belong to planId");
+      }
+      data.planId = plan.id;
+    }
+
     const log = await prisma.gymLog.create({
       data: {
         userId: req.userId!,
@@ -97,8 +144,11 @@ router.post(
         durationMinutes: data.durationMinutes,
         notes: data.notes,
         caloriesBurned: data.caloriesBurned,
+        planId: data.planId,
+        planDayId: data.planDayId,
         source: "manual",
       },
+      include: logInclude,
     });
     res.status(201).json({ log });
   })

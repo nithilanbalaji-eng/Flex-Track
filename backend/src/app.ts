@@ -14,6 +14,7 @@ import logRoutes from "./routes/logs.routes";
 import calorieRoutes from "./routes/calories.routes";
 import aiRoutes from "./routes/ai.routes";
 import healthRoutes from "./routes/health.routes";
+import subscriptionRoutes from "./routes/subscription.routes";
 
 export function createApp() {
   const app = express();
@@ -54,6 +55,7 @@ export function createApp() {
   app.use("/api/calories", calorieRoutes);
   app.use("/api/ai", aiRoutes);
   app.use("/api/health", healthRoutes);
+  app.use("/api/subscription", subscriptionRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
