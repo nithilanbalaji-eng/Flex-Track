@@ -270,7 +270,9 @@ router.get(
   requireAuth,
   asyncHandler(async (req: AuthedRequest, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
-    if (!user) throw ApiError.notFound("User not found");
+    // A token can outlive its account (deleted elsewhere, or on another device).
+    // 401 rather than 404 so the client clears the session and signs out.
+    if (!user) throw ApiError.unauthorized("This account no longer exists");
     res.json({ user: publicUser(user) });
   })
 );
@@ -294,6 +296,71 @@ router.put(
     const data = profileSchema.parse(req.body);
     const user = await prisma.user.update({ where: { id: req.userId! }, data });
     res.json({ user: publicUser(user) });
+  })
+);
+
+/**
+ * Permanently delete the signed-in account.
+ *
+ * Required by App Store Guideline 5.1.1(v): an app that lets people create an
+ * account must let them delete it from inside the app, and it must actually
+ * delete rather than deactivate.
+ *
+ * Most relations cascade from User, but plans the user authored do not - that
+ * relation is Restrict, so they have to go first or the delete fails on a
+ * foreign key. Crews are left intact for the other members unless this was the
+ * last person in them.
+ */
+const deleteAccountSchema = z.object({
+  /** Required for password accounts, so a borrowed phone can't wipe an account. */
+  password: z.string().optional(),
+  /** Required for Google/Apple accounts, which have no password to check. */
+  confirmation: z.string().optional(),
+});
+
+router.delete(
+  "/me",
+  requireAuth,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { password, confirmation } = deleteAccountSchema.parse(req.body ?? {});
+
+    const user = await prisma.user.findUnique({ where: { id: req.userId! } });
+    if (!user) throw ApiError.notFound("User not found");
+
+    if (user.passwordHash) {
+      if (!password) throw ApiError.badRequest("Enter your password to confirm deletion");
+      const valid = await comparePassword(password, user.passwordHash);
+      // 403, not 401: the session is valid, the confirmation failed. A 401 here
+      // would trip the client's expired-session handling and sign the user out
+      // instead of showing them the error.
+      if (!valid) throw ApiError.forbidden("That password is incorrect");
+    } else if (confirmation?.trim().toUpperCase() !== "DELETE") {
+      throw ApiError.badRequest('Type DELETE to confirm');
+    }
+
+    const memberships = await prisma.groupMember.findMany({
+      where: { userId: user.id },
+      select: { groupId: true },
+    });
+    const groupIds = memberships.map((m) => m.groupId);
+
+    await prisma.$transaction(async (tx) => {
+      // Authored plans first - the creator relation is Restrict, not Cascade.
+      // This also clears their days, exercises and shares.
+      await tx.workoutPlan.deleteMany({ where: { createdById: user.id } });
+
+      // Everything else hangs off the user and cascades from here: crew
+      // memberships, gym logs, calorie entries, health syncs, reset tokens.
+      await tx.user.delete({ where: { id: user.id } });
+
+      // Tidy up crews this was the last member of, so empty crews don't linger.
+      for (const groupId of groupIds) {
+        const remaining = await tx.groupMember.count({ where: { groupId } });
+        if (remaining === 0) await tx.group.delete({ where: { id: groupId } });
+      }
+    });
+
+    res.status(204).send();
   })
 );
 

@@ -8,6 +8,7 @@ import { HealthSync, Goal, ActivityLevel, Experience, Equipment, Sex } from "../
 import { PageHeader } from "../components/PageHeader";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { IconApple, IconSparkles, IconChevronRight } from "../components/icons";
+import { DeleteAccount } from "../components/DeleteAccount";
 import { extractErrorMessage } from "../api/client";
 
 export function Settings() {
@@ -290,6 +291,14 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      <DeleteAccount />
+
+      <p className="mt-6 text-center text-xs text-slate-400">
+        <Link to="/privacy" className="underline decoration-slate-300 underline-offset-2">
+          Privacy Policy
+        </Link>
+      </p>
     </div>
   );
 }

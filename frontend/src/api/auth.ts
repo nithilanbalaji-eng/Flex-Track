@@ -29,4 +29,9 @@ export const authApi = {
   updateProfile: (data: Partial<User>) => api.put<{ user: User }>("/auth/me", data).then((r) => r.data.user),
 
   rotateHealthKey: () => api.post<{ user: User }>("/auth/me/rotate-health-key").then((r) => r.data.user),
+
+  /** Permanently deletes the account. Password accounts must confirm with their
+   *  password; Google/Apple accounts type DELETE instead. */
+  deleteAccount: (payload: { password?: string; confirmation?: string }) =>
+    api.delete("/auth/me", { data: payload }),
 };

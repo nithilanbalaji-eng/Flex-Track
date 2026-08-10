@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 
 export function AuthLayout({
@@ -34,6 +35,12 @@ export function AuthLayout({
           <h1 className="text-xl font-bold tracking-tight text-slate-900">{title}</h1>
           <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
           <div className="mt-7">{children}</div>
+
+          <p className="mt-10 text-center text-xs text-slate-300">
+            <Link to="/privacy" className="underline decoration-slate-200 underline-offset-2">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </div>
     </div>
