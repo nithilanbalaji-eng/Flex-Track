@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Flex Track",
+    "slug": "flex-track",
+    "scheme": "flextrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#1a6ff5",
+      "resizeMode": "contain",
+      "image": "./assets/splash-icon.png"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.flextrack.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Flex Track reads your workouts and active energy so your gym log and calories burned stay up to date automatically.",
+        "NSHealthUpdateUsageDescription": "Flex Track can save the sessions you log here back to Apple Health so all your training lives in one place.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true
+      }
+    },
+    "android": {
+      "package": "com.flextrack.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a6ff5",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-secure-store"],
+    "extra": {
+      "apiUrl": "https://flex-track-8sag.onrender.com/api"
+    }
+  }
+}

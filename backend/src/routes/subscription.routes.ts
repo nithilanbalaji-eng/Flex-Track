@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { env } from "../config/env";
+import { verifyAppleReceipt, AppleVerificationError } from "../services/appleIap";
 import {
   PREMIUM_PRICE_USD,
   PREMIUM_PRODUCT_ID,
@@ -62,37 +63,60 @@ router.post(
   })
 );
 
-/**
- * Verifies an Apple In-App Purchase and grants premium. The iOS app sends the
- * transaction it received from StoreKit; the server is the source of truth so
- * a jailbroken client can't simply flip a local flag.
- */
 const appleSchema = z.object({
-  originalTransactionId: z.string().min(3),
-  expiresAtMs: z.number().int().positive().optional(),
+  /** The base64 app receipt StoreKit handed the client. Apple signs it. */
+  receipt: z.string().min(20),
 });
 
+/**
+ * Grants Premium after checking the receipt with Apple.
+ *
+ * The client sends only the receipt; whether it entitles anything is decided by
+ * Apple and recorded here. Nothing the app claims about its own subscription is
+ * trusted, so an invented or edited receipt simply fails verification.
+ */
 router.post(
   "/apple/verify",
   asyncHandler(async (req: AuthedRequest, res) => {
-    if (!env.apple.sharedSecret) {
+    const { receipt } = appleSchema.parse(req.body);
+
+    let verified;
+    try {
+      verified = await verifyAppleReceipt(receipt);
+    } catch (err) {
+      if (err instanceof AppleVerificationError) {
+        // 402: the request was well-formed and authenticated, the purchase just
+        // doesn't entitle anything.
+        throw new ApiError(402, err.message);
+      }
+      throw err;
+    }
+
+    // One Apple subscription shouldn't unlock several accounts. If this receipt
+    // is already attached elsewhere, refuse rather than silently sharing it.
+    const existing = await prisma.user.findFirst({
+      where: { subscriptionId: verified.originalTransactionId, NOT: { id: req.userId! } },
+      select: { id: true },
+    });
+    if (existing) {
       throw new ApiError(
-        501,
-        "Apple In-App Purchase is not configured on this server. Set APPLE_IAP_SHARED_SECRET."
+        409,
+        "That App Store subscription is already linked to a different Flex Track account."
       );
     }
 
-    const { originalTransactionId, expiresAtMs } = appleSchema.parse(req.body);
     const user = await prisma.user.update({
       where: { id: req.userId! },
       data: {
-        isPremium: true,
-        premiumUntil: expiresAtMs ? new Date(expiresAtMs) : addBillingPeriod(),
-        subscriptionId: originalTransactionId,
+        isPremium: verified.isActive,
+        premiumUntil: verified.expiresAt,
+        subscriptionId: verified.originalTransactionId,
         subscriptionStore: "apple",
+        appleReceipt: verified.latestReceipt,
       },
     });
-    res.json(statusPayload(user));
+
+    res.json({ ...statusPayload(user), willRenew: verified.willRenew, environment: verified.environment });
   })
 );
 
@@ -101,6 +125,16 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res) => {
     const current = await loadUser(req.userId!);
     if (!isPremiumActive(current)) throw ApiError.badRequest("You don't have an active subscription");
+
+    // Only Apple can cancel an App Store subscription. Flipping our own flag
+    // would hide the subscription while Apple kept charging for it, so say so
+    // instead and point at the one place that actually works.
+    if (current.subscriptionStore === "apple") {
+      throw new ApiError(
+        409,
+        "App Store subscriptions are managed by Apple. Open Settings › your name › Subscriptions on your iPhone to cancel."
+      );
+    }
 
     // Keep access until the paid period runs out rather than cutting it off now.
     const user = await prisma.user.update({

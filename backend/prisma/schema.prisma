@@ -51,6 +51,11 @@ model User {
   subscriptionId    String? // Stripe subscription id, or the Apple original_transaction_id
   subscriptionStore String? // stripe | apple | manual
 
+  // The latest Apple receipt, kept so the server can re-check entitlement with
+  // Apple on its own - when a renewal notification arrives, or a refund - without
+  // needing the app to be open. Apple rotates this on every renewal.
+  appleReceipt      String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

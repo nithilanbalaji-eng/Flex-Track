@@ -290,6 +290,25 @@ Connect with product id `flextrack_premium_monthly`, then set:
 APPLE_IAP_SHARED_SECRET=...
 ```
 
+Also point **App Store Server Notifications V2** (both production and sandbox)
+at `https://<your-api>/api/apple/notifications`. Without it, a subscription that
+renews, lapses or is refunded keeps whatever state it had the last time the app
+happened to open.
+
+How entitlement is decided, and why it can't be faked:
+
+- The app sends only the receipt StoreKit gave it. It never asserts that it paid.
+- The server verifies that receipt directly with Apple and records what Apple
+  says. An invented or edited receipt fails verification.
+- The notification webhook is treated as untrusted input: it's used only to work
+  out *which* account changed, then the server re-verifies that user's stored
+  receipt with Apple. A forged POST to that URL therefore can't grant anything.
+- A receipt already linked to another account is refused, so one subscription
+  can't unlock several logins.
+- Cancelling is refused for App Store subscriptions and the user is pointed at
+  iOS Settings, because a server can't cancel an Apple subscription — flipping
+  our own flag would hide it while Apple kept charging.
+
 ### Testing Premium without paying
 
 In development only, the paywall shows a **"Dev: activate without paying"**

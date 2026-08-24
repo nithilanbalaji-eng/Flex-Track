@@ -1,0 +1,40 @@
+import { api } from "./client";
+import { User } from "../types";
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export const authApi = {
+  signup: (data: { name: string; email: string; password: string; acceptPrivacy: true }) =>
+    api.post<AuthResponse>("/auth/signup", data).then((r) => r.data),
+
+  login: (data: { email: string; password: string }) =>
+    api.post<AuthResponse>("/auth/login", data).then((r) => r.data),
+
+  google: (idToken: string, acceptPrivacy?: boolean) =>
+    api.post<AuthResponse>("/auth/google", { idToken, acceptPrivacy }).then((r) => r.data),
+
+  apple: (identityToken: string, fullName?: string, acceptPrivacy?: boolean) =>
+    api.post<AuthResponse>("/auth/apple", { identityToken, fullName, acceptPrivacy }).then((r) => r.data),
+
+  acceptPrivacy: () => api.post<{ user: User }>("/auth/accept-privacy").then((r) => r.data.user),
+
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>("/auth/forgot-password", { email }).then((r) => r.data),
+
+  resetPassword: (token: string, password: string) =>
+    api.post<AuthResponse>("/auth/reset-password", { token, password }).then((r) => r.data),
+
+  me: () => api.get<{ user: User }>("/auth/me").then((r) => r.data.user),
+
+  updateProfile: (data: Partial<User>) => api.put<{ user: User }>("/auth/me", data).then((r) => r.data.user),
+
+  rotateHealthKey: () => api.post<{ user: User }>("/auth/me/rotate-health-key").then((r) => r.data.user),
+
+  /** Permanently deletes the account. Password accounts must confirm with their
+   *  password; Google/Apple accounts type DELETE instead. */
+  deleteAccount: (payload: { password?: string; confirmation?: string }) =>
+    api.delete("/auth/me", { data: payload }),
+};
